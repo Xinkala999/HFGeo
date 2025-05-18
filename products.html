@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <title>პროდუქტები | HFGEO</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/png" href="icon.jpg" />
+  <style>
+    .product-img { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; }
+    .image-scroll { display: flex; overflow-x: auto; gap: 10px; margin-top: 10px; }
+    .product-card {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+    .product-card h4 a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    .product-card h4 a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">მთავარი</a>
+    <a href="profile.html">პროფილი</a>
+    <a href="add-product.html">პროდუქტის დამატება</a>
+  </nav>
+  <div class="container">
+    <h2>ყველა პროდუქტი</h2>
+    <div id="productList">ჩატვირთვა...</div>
+  </div>
+
+  <script>
+    async function loadProducts() {
+      try {
+        const res = await fetch("http://localhost:5000/api/products/all");
+        if (!res.ok) throw new Error("პროდუქტების ჩატვირთვა ვერ მოხერხდა");
+        const products = await res.json();
+
+        const productList = document.getElementById("productList");
+        productList.innerHTML = "";
+
+        if (products.length === 0) {
+          productList.innerHTML = "<p>ჯერ არ არის დამატებული პროდუქტი.</p>";
+          return;
+        }
+
+        products.forEach(p => {
+          const div = document.createElement("div");
+          div.className = "product-card";
+
+          let imagesHTML = "";
+          if (p.images && p.images.length > 0) {
+            imagesHTML = `<div class="image-scroll">` +
+              p.images.map(src => `<a href="product-details.html?id=${p._id}"><img src="${src}" class="product-img" alt="product image" /></a>`).join("") +
+              `</div>`;
+          }
+
+          div.innerHTML = `
+            <h4><a href="product-details.html?id=${p._id}">${p.name}</a></h4>
+            <p>${p.description}</p>
+            <p><strong>${p.price}₾</strong></p>
+            ${imagesHTML}
+            <p style="font-size:12px; color:gray;">დამატებულია: ${p.user.email}</p>
+          `;
+          productList.appendChild(div);
+        });
+      } catch (err) {
+        document.getElementById("productList").innerHTML = "<p>პროდუქტების ჩატვირთვა ვერ მოხერხდა.</p>";
+        console.error(err);
+      }
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>

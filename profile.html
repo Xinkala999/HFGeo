@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <title>პროფილი | HFGEO</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/png" href="icon.jpg" />
+  <style>
+    .profile-photo {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #ddd;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">მთავარი</a>
+    <a href="add-product.html">პროდუქტის დამატება</a>
+    <a href="products.html">პროდუქტები</a>
+    <a href="edit-profile.html">რედაქტირება</a>
+    <a href="#" onclick="logout()">გასვლა</a>
+  </nav>
+
+  <div class="container">
+    <h2>ჩემი პროფილი</h2>
+    <div id="profileInfo">ტვირთვა...</div>
+    <h3>ჩემი პროდუქტები:</h3>
+    <div id="myProducts"></div>
+  </div>
+
+  <script>
+    const email = localStorage.getItem("currentUser");
+    if (!email) window.location.href = "login.html";
+
+    const profileInfoDiv = document.getElementById("profileInfo");
+    const myProductsDiv = document.getElementById("myProducts");
+
+    async function loadProfile() {
+      try {
+        const userRes = await fetch("http://localhost:5000/api/users");
+        if (!userRes.ok) throw new Error("მომხმარებლის მონაცემების წამოღება ვერ მოხერხდა");
+        const users = await userRes.json();
+        const currentUser = users.find(u => u.email === email);
+
+        if (!currentUser) {
+          profileInfoDiv.innerHTML = "<p>მომხმარებელი ვერ მოიძებნა.</p>";
+          return;
+        }
+
+        profileInfoDiv.innerHTML = `
+          <img src="${currentUser.profileImage || 'default.png'}" class="profile-photo" alt="ფოტო">
+          <p><strong>სახელი:</strong> ${currentUser.name}</p>
+          <p><strong>ელფოსტა:</strong> ${currentUser.email}</p>
+          <p><strong>ტელეფონი:</strong> ${currentUser.phone || 'არ არის მითითებული'}</p>
+          <p><strong>ბიო:</strong> ${currentUser.bio || 'არ არის მითითებული'}</p>
+        `;
+
+        const productRes = await fetch("http://localhost:5000/api/products/all");
+        const products = await productRes.json();
+        const myProducts = products.filter(p => p.user.email === email);
+
+        if (myProducts.length === 0) {
+          myProductsDiv.innerHTML = "<p>ჯერ არ გაქვს დამატებული პროდუქტი.</p>";
+        } else {
+          myProductsDiv.innerHTML = "";
+          myProducts.forEach(p => {
+            const div = document.createElement("div");
+            div.className = "product-card";
+            const images = (p.images || []).map(src => `<img src="${src}" class="product-img">`).join("");
+            div.innerHTML = `
+              <h4>${p.name}</h4>
+              <p>${p.description}</p>
+              <p><strong>${p.price}₾</strong></p>
+              <div class="image-scroll">${images}</div>
+            `;
+            myProductsDiv.appendChild(div);
+          });
+        }
+      } catch (err) {
+        profileInfoDiv.innerHTML = "<p>პროფილის ჩატვირთვა ვერ მოხერხდა.</p>";
+        console.error(err);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("currentUser");
+      window.location.href = "login.html";
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>

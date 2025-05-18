@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <title>პროდუქტის დეტალები | HFGEO</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/png" href="icon.jpg" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    nav a {
+      margin-right: 15px;
+      text-decoration: none;
+      color: #007bff;
+      font-weight: 600;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    .image-scroll {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+    .product-img {
+      width: 150px;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s ease-in-out;
+    }
+    .product-img:hover {
+      transform: scale(1.05);
+    }
+    .main-image {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+    }
+    .product-info h2 {
+      margin-top: 0;
+      color: #333;
+    }
+    .product-info p {
+      font-size: 16px;
+      color: #555;
+      line-height: 1.4;
+    }
+    .seller-info {
+      margin-top: 30px;
+      padding: 15px;
+      border: 1px solid #eee;
+      background-color: #fafafa;
+      border-radius: 8px;
+    }
+    .seller-info h3 {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">მთავარი</a>
+    <a href="products.html">პროდუქტები</a>
+    <a href="profile.html">პროფილი</a>
+    <a href="add-product.html">პროდუქტის დამატება</a>
+  </nav>
+
+  <div id="productContainer">
+    <img id="mainImage" src="" alt="პროდუქტის მთავარი ფოტო" class="main-image" />
+    <div class="image-scroll" id="imageScroll"></div>
+
+    <div class="product-info">
+      <h2 id="productName"></h2>
+      <p id="productDescription"></p>
+      <p><strong>ფასი: </strong><span id="productPrice"></span> ₾</p>
+    </div>
+
+    <div class="seller-info" id="sellerInfo">
+      <h3>გამყიდველის ინფორმაცია</h3>
+      <p><strong>სახელი:</strong> <span id="sellerName"></span></p>
+      <p><strong>ელფოსტა:</strong> <span id="sellerEmail"></span></p>
+      <p><strong>სტატუსი:</strong> <span id="sellerStatus"></span></p>
+    </div>
+  </div>
+
+  <script>
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    const productId = getQueryParam('id');
+    if (!productId) {
+      alert('პროდუქტის ID ვერ მოიძებნა');
+      window.location.href = 'products.html';
+    }
+
+    async function loadProduct() {
+      try {
+        const res = await fetch(`http://localhost:5000/api/products/${productId}`);
+        if (!res.ok) throw new Error('პროდუქტის ჩატვირთვა ვერ მოხერხდა');
+        const product = await res.json();
+
+        document.getElementById('productName').textContent = product.name;
+        document.getElementById('productDescription').textContent = product.description;
+        document.getElementById('productPrice').textContent = product.price;
+
+        document.getElementById('sellerName').textContent = product.user.name || 'უცნობი';
+        document.getElementById('sellerEmail').textContent = product.user.email || 'უცნობი';
+        document.getElementById('sellerStatus').textContent = product.user.userType || 'უცნობი';
+
+        const mainImage = document.getElementById('mainImage');
+        const imageScroll = document.getElementById('imageScroll');
+
+        if (product.images && product.images.length > 0) {
+          mainImage.src = product.images[0];
+          imageScroll.innerHTML = '';
+
+          product.images.forEach((src, index) => {
+            const img = document.createElement('img');
+            img.src = src;
+            img.className = 'product-img';
+            img.alt = `Product image ${index + 1}`;
+            img.addEventListener('click', () => {
+              mainImage.src = src;
+            });
+            imageScroll.appendChild(img);
+          });
+        } else {
+          mainImage.style.display = 'none';
+          imageScroll.innerHTML = '<p>სურათები არ არის.</p>';
+        }
+      } catch (err) {
+        alert(err.message);
+        window.location.href = 'products.html';
+      }
+    }
+
+    loadProduct();
+  </script>
+</body>
+</html>

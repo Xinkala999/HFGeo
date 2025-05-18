@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <title>შესვლა | HFGEO</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="icon.jpg" />
+</head>
+<body>
+  <nav>
+    <a href="index.html">მთავარი</a>
+    <a href="register.html">რეგისტრაცია</a>
+  </nav>
+  <div class="container">
+    <h2>შესვლა</h2>
+    <form id="loginForm">
+      <input type="email" id="loginEmail" placeholder="ელ.ფოსტა" required>
+      <input type="password" id="loginPassword" placeholder="პაროლი" required>
+      <button type="submit">შესვლა</button>
+    </form>
+    <p class="message" id="loginMessage" style="color: red;"></p>
+  </div>
+  
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
+      const message = document.getElementById("loginMessage");
+
+      try {
+        const res = await fetch("http://localhost:5000/api/users/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem("currentUser", data.email);
+          window.location.href = "profile.html";
+        } else {
+          message.textContent = data.error || "შეცდომა ავტორიზაციისას.";
+        }
+      } catch (err) {
+        message.textContent = "სერვერთან კავშირის პრობლემა.";
+      }
+    });
+  </script>
+</body>
+</html>

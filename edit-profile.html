@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <title>პროფილის რედაქტირება | HFGEO</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav>
+    <a href="index.html">მთავარი</a>
+    <a href="profile.html">პროფილი</a>
+    <a href="#" onclick="logout()">გასვლა</a>
+  </nav>
+
+  <div class="container">
+    <h2>პროფილის რედაქტირება</h2>
+    <form id="editForm">
+      <input type="text" id="name" placeholder="სახელი" required>
+      <input type="text" id="phone" placeholder="ტელეფონის ნომერი">
+      <textarea id="bio" placeholder="ბიოგრაფია"></textarea>
+      <label>პროფილის ფოტო</label>
+      <input type="file" id="profileImage" accept="image/*">
+      <img id="preview" src="" style="width: 100px; margin-top: 10px;">
+      <button type="submit">შენახვა</button>
+    </form>
+    <p id="msgBox" class="message"></p>
+  </div>
+
+  <script>
+    const email = localStorage.getItem("currentUser");
+    if (!email) window.location.href = "login.html";
+
+    const form = document.getElementById("editForm");
+    const preview = document.getElementById("preview");
+    const msgBox = document.getElementById("msgBox");
+    let profileImageBase64 = "";
+
+    async function loadCurrentUser() {
+      try {
+        const res = await fetch("http://localhost:5000/api/users");
+        const users = await res.json();
+        const currentUser = users.find(u => u.email === email);
+        if (!currentUser) return;
+
+        document.getElementById("name").value = currentUser.name || "";
+        document.getElementById("phone").value = currentUser.phone || "";
+        document.getElementById("bio").value = currentUser.bio || "";
+        if (currentUser.profileImage) {
+          profileImageBase64 = currentUser.profileImage;
+          preview.src = profileImageBase64;
+        }
+      } catch (err) {
+        console.error("პროფილის მონაცემების ჩატვირთვა ვერ მოხერხდა:", err);
+      }
+    }
+
+    document.getElementById("profileImage").addEventListener("change", function () {
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        profileImageBase64 = e.target.result;
+        preview.src = profileImageBase64;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const bio = document.getElementById("bio").value.trim();
+
+      try {
+        const res = await fetch("http://localhost:5000/api/users/update", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, name, phone, bio, profileImage: profileImageBase64 })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "შეცდომა რედაქტირებისას");
+
+        msgBox.textContent = "პროფილი განახლდა წარმატებით!";
+        localStorage.setItem("currentUserName", name);
+      } catch (err) {
+        msgBox.textContent = err.message;
+      }
+    });
+
+    function logout() {
+      localStorage.removeItem("currentUser");
+      window.location.href = "login.html";
+    }
+
+    loadCurrentUser();
+  </script>
+</body>
+</html>

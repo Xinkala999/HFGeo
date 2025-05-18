@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <title>ადმინის პანელი | HFGEO</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/png" href="icon.jpg" />
+</head>
+<body>
+  <nav>
+    <a href="index.html">მთავარი</a>
+    <a href="profile.html">პროფილი</a>
+    <a href="products.html">პროდუქტები</a>
+    <a href="#" onclick="logout()">გასვლა</a>
+  </nav>
+  <div class="container">
+    <h2>ადმინის პანელი</h2>
+    <p>შეგიძლია დაამატო კატეგორიები ან სექციები.</p>
+    <input type="text" id="newCategory" placeholder="ახალი კატეგორია" />
+    <button onclick="addCategory()">კატეგორიის დამატება</button>
+    <ul id="categoryList">ჩატვირთვა...</ul>
+  </div>
+
+  <script>
+    const userJSON = localStorage.getItem("currentUser");
+    if (!userJSON) {
+      alert("გთხოვთ გაიაროთ ავტორიზაცია");
+      window.location.href = "login.html";
+    }
+    const user = JSON.parse(userJSON);
+    if (!user.isAdmin) {
+      alert("დაშვება მხოლოდ ადმინისტრატორისთვისაა!");
+      window.location.href = "index.html";
+    }
+
+    const categoryList = document.getElementById("categoryList");
+    const newCategoryInput = document.getElementById("newCategory");
+
+    async function loadCategories() {
+      try {
+        const res = await fetch("http://localhost:5000/api/categories");
+        if (!res.ok) throw new Error("კატეგორიების ჩატვირთვა ვერ მოხერხდა");
+        const categories = await res.json();
+
+        categoryList.innerHTML = "";
+        if (categories.length === 0) {
+          categoryList.innerHTML = "<li>კატეგორიები არ არის.</li>";
+          return;
+        }
+
+        categories.forEach(cat => {
+          const li = document.createElement("li");
+          li.textContent = cat.name;
+          categoryList.appendChild(li);
+        });
+      } catch (err) {
+        categoryList.innerHTML = "<li>კატეგორიების ჩატვირთვა ვერ მოხერხდა.</li>";
+        console.error(err);
+      }
+    }
+
+    async function addCategory() {
+      const val = newCategoryInput.value.trim();
+      if (!val) return alert("გთხოვთ ჩაწეროთ კატეგორიის სახელი");
+
+      try {
+        const res = await fetch("http://localhost:5000/api/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: val }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "შეცდომა კატეგორიის დამატებისას");
+        }
+        newCategoryInput.value = "";
+        await loadCategories();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("currentUser");
+      localStorage.removeItem("loggedIn");
+      window.location.href = "login.html";
+    }
+
+    loadCategories();
+  </script>
+</body>
+</html>

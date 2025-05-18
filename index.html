@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <title>მთავარი | HFGEO</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/png" href="icon.jpg" />
+  <style>
+    .product-img { 
+      width: 100px; 
+      height: 100px; 
+      object-fit: cover; 
+      border-radius: 6px; 
+      cursor: pointer;
+      transition: transform 0.2s ease-in-out;
+    }
+    .product-img:hover {
+      transform: scale(1.05);
+    }
+    .image-scroll { 
+      display: flex; 
+      overflow-x: auto; 
+      gap: 10px; 
+      margin-top: 10px; 
+    }
+    .product-card {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+    .product-card h4 a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    .product-card h4 a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <nav id="mainNav">
+    <!-- ნავიგაცია ჩამატვირთავს JS-ით -->
+  </nav>
+
+  <div class="container">
+    <h2>მოგესალმები HFGEO-ში</h2>
+    <p>დაიწყე სანადირო და სათევზაო პროდუქციის ყიდვა ან გაყიდვა!</p>
+    <h3 style="margin-top: 40px;">ბოლოს დამატებული პროდუქტები</h3>
+    <div id="latestProducts">ჩატვირთვა...</div>
+  </div>
+
+  <script>
+    const nav = document.getElementById("mainNav");
+    const email = localStorage.getItem("currentUser");
+
+    if (email) {
+      nav.innerHTML = `
+        <a href="index.html">მთავარი</a>
+        <a href="products.html">პროდუქტები</a>
+        <a href="add-product.html">პროდუქტის დამატება</a>
+        <a href="profile.html">პროფილი</a>
+        <a href="#" onclick="logout()">გასვლა</a>
+      `;
+    } else {
+      nav.innerHTML = `
+        <a href="index.html">მთავარი</a>
+        <a href="products.html">პროდუქტები</a>
+        <a href="login.html">შესვლა</a>
+        <a href="register.html">რეგისტრაცია</a>
+      `;
+    }
+
+    function logout() {
+      localStorage.removeItem("currentUser");
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <script>
+    async function loadLatestProducts() {
+      try {
+        const res = await fetch("http://localhost:5000/api/products/all");
+        if (!res.ok) throw new Error("პროდუქტების ჩატვირთვა ვერ მოხერხდა");
+        const products = await res.json();
+
+        // დალაგება დამატების თარიღით კლებადი და ბოლო 5
+        const latest = products
+          .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded))
+          .slice(0, 5);
+
+        const latestProductsDiv = document.getElementById("latestProducts");
+        latestProductsDiv.innerHTML = "";
+
+        if (latest.length === 0) {
+          latestProductsDiv.innerHTML = "<p>ჯერ არ არის დამატებული პროდუქტი.</p>";
+          return;
+        }
+
+        latest.forEach(p => {
+          const div = document.createElement("div");
+          div.className = "product-card";
+
+          let imagesHTML = "";
+          if (p.images && p.images.length > 0) {
+            imagesHTML = `<div class="image-scroll">` +
+              p.images.map(src => `<a href="product-details.html?id=${p._id}"><img src="${src}" class="product-img" alt="product image" /></a>`).join("") +
+              `</div>`;
+          }
+
+          div.innerHTML = `
+            <h4><a href="product-details.html?id=${p._id}">${p.name}</a></h4>
+            <p>${p.description}</p>
+            <p><strong>${p.price}₾</strong></p>
+            ${imagesHTML}
+            <p style="font-size:12px; color:gray;">დამატებულია: ${p.user.email}</p>
+          `;
+          latestProductsDiv.appendChild(div);
+        });
+      } catch (err) {
+        document.getElementById("latestProducts").innerHTML = "<p>პროდუქტების ჩატვირთვა ვერ მოხერხდა.</p>";
+        console.error(err);
+      }
+    }
+
+    loadLatestProducts();
+  </script>
+</body>
+</html>

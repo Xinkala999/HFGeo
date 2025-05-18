@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <title>რეგისტრაცია | HFGEO</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="icon.jpg" />
+</head>
+<body>
+  <nav>
+    <a href="index.html">მთავარი</a>
+    <a href="login.html">შესვლა</a>
+    <a href="register.html">რეგისტრაცია</a>
+  </nav>
+
+  <div class="container">
+    <h2>რეგისტრაცია</h2>
+    <form>
+      <input type="text" id="name" placeholder="სახელი" required>
+      <input type="email" id="email" placeholder="ელ.ფოსტა" required>
+      <input type="password" id="password" placeholder="პაროლი" required>
+      <select id="userType">
+        <option value="person">ფიზიკური პირი</option>
+        <option value="company">კომპანია</option>
+      </select>
+      <button type="submit">რეგისტრაცია</button>
+      <p id="messageBox" style="color: red;"></p>
+    </form>
+  </div>
+
+  <script>
+    document.querySelector("form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const userType = document.getElementById("userType").value;
+      const message = document.getElementById("messageBox");
+
+      if (!name || !email || !password) {
+        message.textContent = "გთხოვ შეავსო ყველა ველი.";
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:5000/api/users/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password, userType })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem("currentUser", email);
+          window.location.href = "profile.html";
+        } else {
+          message.textContent = data.error || "რეგისტრაციის შეცდომა.";
+        }
+      } catch (err) {
+        message.textContent = "სერვერთან კავშირის შეცდომა.";
+      }
+    });
+  </script>
+</body>
+</html>
